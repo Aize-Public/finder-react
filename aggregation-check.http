@@ -1,0 +1,25 @@
+POST http://localhost:3000/api/search HTTP/1.1
+Content-Type: application/json
+
+{
+  "query": "II 1 G",
+  "aggregate": "source,System,I/O TYPE"
+}
+
+
+###
+POST http://localhost:3000/api/search HTTP/1.1
+Content-Type: application/json
+
+{
+  "query": "IP",
+  "aggregations": {
+    "System": ["21: CRUDE HANDLING AND METERING"],
+    "source": ["aveva"]
+  }
+}
+
+
+### Meta
+GET http://localhost:3000/api/meta HTTP/1.1
+Content-Type: application/json
