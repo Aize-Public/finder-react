@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Listbox } from "@headlessui/react";
 import { ArrowDownIcon } from "@heroicons/react/20/solid";
 
@@ -9,39 +9,35 @@ export interface Option {
 }
 
 interface SelectProps {
+  label: string;
   defaultValue?: Option[];
   options: Option[];
-  onChange: (selectedOption: Option[]) => void;
+  onChange: (selectedOption: Option[], label: string) => void;
 }
 
-export function Select({ options, defaultValue, onChange }: SelectProps) {
-  const localDefaultValue = defaultValue ? defaultValue : [options[0]];
-  const [selected, setSelected] = useState(localDefaultValue);
-  const [isSelectAllSelected, setIsSelectAllSelected] = useState(false);
+export function Select({
+  label,
+  options,
+  defaultValue,
+  onChange,
+}: SelectProps) {
+  const [selected, setSelected] = useState<Option[]>([]);
+  const isSelectAllSelected = selected.length === options.length;
 
-  const handleOptionChange = (option: Option) => {
-    if (option.id === -1) {
-      if (isSelectAllSelected) {
-        setIsSelectAllSelected(false);
-        setSelected([]);
-      } else {
-        setIsSelectAllSelected(true);
-        setSelected(options.filter((opt) => opt.id !== -1));
-      }
-    } else {
-      const localSelected = [...selected];
-      const index = localSelected.findIndex((item) => item.id === option.id);
-      if (index !== -1) {
-        setIsSelectAllSelected(false);
-        localSelected.splice(index, 1);
-      } else {
-        localSelected.push(option);
-        localSelected.length === options.length
-          ? setIsSelectAllSelected(true)
-          : setIsSelectAllSelected(false);
-      }
-      setSelected(localSelected);
-    }
+  const toggleSelectAll = () => {
+    const selection = isSelectAllSelected ? [] : options;
+    setSelected(selection);
+    onChange(selection, label);
+  };
+
+  const toggleOption = (option: Option) => {
+    setSelected((prevSelected) => {
+      const selection = prevSelected.some((item) => item.id === option.id)
+        ? prevSelected.filter((item) => item.id !== option.id)
+        : [...prevSelected, option];
+      onChange(selection, label);
+      return selection;
+    });
   };
 
   const selectAllOption: Option = {
@@ -51,22 +47,24 @@ export function Select({ options, defaultValue, onChange }: SelectProps) {
   };
 
   return (
-    <div className="absolute  ">
-      <Listbox value={selected} onChange={handleOptionChange}>
+    <div className="relative select-component">
+      <Listbox value={selected}>
         <Listbox.Button className="border w-full text-left bg-white border-gray-300 rounded-md px-2 py-2  focus:ring-blue-500 focus:border-blue-500">
-          <div className="flex items-center justify-between">
-            {isSelectAllSelected ? (
-              "All Selected"
+          <div className="flex items-center justify-between  w-full">
+            {selected.length > 0 ? (
+              <div className="overflow-hidden truncate">
+                <span>{label} is </span>
+                <span className="font-bold">
+                  {selected.map((sel) => sel.name).join(", ")}
+                </span>
+              </div>
             ) : (
-              <>
-                {selected.map((selection) => selection.name + ", ")}
-                {selected.length === 0 ? "Select an option" : ""}
-              </>
+              label
             )}
             <ArrowDownIcon className="w-5 h-5 text-gray-400" />
           </div>
         </Listbox.Button>
-        <Listbox.Options className="border border-gray-300 rounded-md  relative  w-auto">
+        <Listbox.Options className="border border-gray-300 rounded-md absolute max-h-60 z-20  overflow-y-auto w-full">
           <Listbox.Option
             key={selectAllOption.id}
             value={selectAllOption}
@@ -76,13 +74,13 @@ export function Select({ options, defaultValue, onChange }: SelectProps) {
                 className={`py-2 ${
                   active ? "bg-blue-500 text-white" : "bg-white text-black"
                 }`}
-                onClick={() => handleOptionChange(selectAllOption)}>
+                onClick={toggleSelectAll}>
                 <div className="flex items-center justify-between px-2 py-2">
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isSelectAllSelected}
-                      onChange={() => handleOptionChange(selectAllOption)}
+                      onChange={toggleSelectAll}
                       className="form-checkbox h-5 w-5 text-blue-500"
                     />
                     <span>{selectAllOption.name}</span>
@@ -98,16 +96,13 @@ export function Select({ options, defaultValue, onChange }: SelectProps) {
                   className={`py-2 ${
                     active ? "bg-blue-500 text-white" : "bg-white text-black"
                   }`}
-                  onClick={() => handleOptionChange(option)}>
+                  onClick={() => toggleOption(option)}>
                   <div className="flex items-center justify-between px-2 py-2">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={
-                          selected.find((sel) => sel.id === option.id) !==
-                          undefined
-                        }
-                        onChange={() => handleOptionChange(option)}
+                        checked={selected.some((sel) => sel.id === option.id)}
+                        onChange={() => toggleOption(option)}
                         className="form-checkbox h-5 w-5 text-blue-500"
                       />
                       <span>{option.name}</span>

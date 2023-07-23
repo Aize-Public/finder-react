@@ -23,7 +23,8 @@ export default function handler(
   res: NextApiResponse<SearchResponse>
 ) {
   const defaultSize = 15;
-  let results: SearchResponse[] = [];
+  const searchData = dummyData as ISearchData[];
+  let results: ISearchData[] = [];
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
@@ -36,9 +37,9 @@ export default function handler(
   }: SearchRequest = req.body;
 
   if (!query) {
-    dummyData.slice(offset, defaultSize);
+    results = searchData.slice(offset, defaultSize);
   } else {
-    results = dummyData.filter((item) =>
+    results = searchData.filter((item) =>
       Object.values(item).some((value) => {
         if (typeof value === "string") {
           return value.toLowerCase().includes(query.toLowerCase());

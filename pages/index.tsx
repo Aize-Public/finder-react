@@ -5,6 +5,8 @@ import Result from "@/components/results/result";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { useState } from "react";
 import { SearchRequest } from "./api/search";
+import "react-date-range/dist/styles.css"; // main css file
+import "react-date-range/dist/theme/default.css"; // theme css file
 
 const emptySearchRequest: SearchRequest = {
   query: " ",
@@ -12,10 +14,17 @@ const emptySearchRequest: SearchRequest = {
 };
 
 const Home: React.FC = () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1200000,
+        cacheTime: 1200000,
+      },
+    },
+  });
   const [query, setQuery] = useState<SearchRequest>(emptySearchRequest);
   return (
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <div className="finder">
         <header className="bg-gray-800 py-4">
           <div className="container mx-auto px-1">

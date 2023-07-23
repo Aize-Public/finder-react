@@ -1,4 +1,5 @@
 import { SearchRequest } from "@/pages/api/search";
+import { debounce } from "lodash";
 import { ChangeEvent, useState } from "react";
 
 interface SearchProps {
@@ -7,11 +8,10 @@ interface SearchProps {
 }
 
 const SearchBar: React.FC<SearchProps> = ({ queryHandler, query }) => {
-  const [searchQuery, setSearchQuery] = useState<SearchRequest>(query);
+  const debouncedQueryHandler = debounce(queryHandler, 500);
   const queryStringHandler = (event: ChangeEvent<HTMLInputElement>) => {
-    const updatedQuery = { ...searchQuery, query: event.target.value };
-    setSearchQuery(updatedQuery);
-    queryHandler(updatedQuery);
+    const updatedQuery = { ...query, query: event.target.value };
+    debouncedQueryHandler(updatedQuery);
   };
 
   return (
@@ -21,7 +21,7 @@ const SearchBar: React.FC<SearchProps> = ({ queryHandler, query }) => {
           <input
             type="text"
             className="w-full h-10 px-4 mr-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-indigo-500"
-            placeholder={searchQuery?.query}
+            placeholder={query?.query}
             onChange={queryStringHandler}
           />
           <button className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">

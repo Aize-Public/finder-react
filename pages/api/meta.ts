@@ -65,10 +65,9 @@ function parseValue(value: any): ParsedValue {
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const data = dummyData as Data[];
-
     const metadata: { [key: string]: Metadata } = {};
 
-    data.forEach((row) => {
+    for (const row of data) {
       for (const key in row) {
         if (row.hasOwnProperty(key)) {
           const value = row[key];
@@ -84,47 +83,46 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
             metadata[key].values.push(value);
           }
 
-          const { dataType, parsedValue } = parseValue(value);
+          if (metadata[key].dataType === "") {
+            const { dataType } = parseValue(value);
+            metadata[key].dataType = dataType;
+          }
 
-          switch (dataType) {
-            case "number":
-              metadata[key].dataType = dataType;
-              metadata[key].values = metadata[key].values.map((val) =>
-                val === value ? parsedValue : val
-              );
-              metadata[key].min = Math.min(...metadata[key].values);
-              metadata[key].max = Math.max(...metadata[key].values);
-              break;
-            case "date":
-              metadata[key].dataType = dataType;
-              metadata[key].values = metadata[key].values.map((val) =>
-                val === value ? parsedValue : val
-              );
-              metadata[key].min = Math.min(...metadata[key].values);
-
-              metadata[key].max = Math.max(...metadata[key].values);
-              break;
-            case "boolean":
-              metadata[key].dataType = dataType;
-              metadata[key].values = metadata[key].values.map((val) =>
-                val === value ? parsedValue : val
-              );
-              const trueCount = metadata[key].values.filter(Boolean).length;
-              const falseCount = metadata[key].values.length - trueCount;
-              metadata[key].trueCount = trueCount;
-              metadata[key].falseCount = falseCount;
-              break;
-            default:
-              metadata[key].dataType = dataType;
-              break;
+          if (
+            metadata[key].dataType === "number" ||
+            metadata[key].dataType === "date"
+          ) {
+            const parsedValue = parseValue(value).parsedValue;
+            metadata[key].values = metadata[key].values.map((val) =>
+              val === value ? parsedValue : val
+            );
           }
         }
       }
-    });
+    }
+
+    for (const key in metadata) {
+      const metadataItem = metadata[key];
+      switch (metadataItem.dataType) {
+        case "number":
+        case "date":
+          metadataItem.min = Math.min(...metadataItem.values);
+          metadataItem.max = Math.max(...metadataItem.values);
+          break;
+        case "boolean":
+          metadataItem.trueCount = metadataItem.values.filter(Boolean).length;
+          metadataItem.falseCount =
+            metadataItem.values.length - metadataItem.trueCount;
+          break;
+      }
+    }
 
     // Return the metadata as JSON response
     res.status(200).json(metadata);
   } catch (error) {
     console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while processing the data." });
   }
 }
