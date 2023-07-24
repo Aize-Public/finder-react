@@ -1,7 +1,6 @@
 import SearchBar from "@/components/header";
 import "../app/globals.css";
-import Filters from "@/components/filters";
-import Result from "@/components/results/result";
+import { Result } from "@/components/results/result";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { useState } from "react";
 import { SearchRequest } from "./api/search";
@@ -10,18 +9,20 @@ import "react-date-range/dist/theme/default.css"; // theme css file
 
 const emptySearchRequest: SearchRequest = {
   query: " ",
-  aggregate: "",
+  aggregate: "System,Discipline",
+  stats: "",
 };
 
-const Home: React.FC = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 1200000,
-        cacheTime: 1200000,
-      },
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1200000,
+      cacheTime: 1200000,
     },
-  });
+  },
+});
+
+const Home: React.FC = () => {
   const [query, setQuery] = useState<SearchRequest>(emptySearchRequest);
   return (
     <QueryClientProvider client={queryClient}>
@@ -35,9 +36,7 @@ const Home: React.FC = () => {
           <div className="py-4 pb-12 px-4">
             <SearchBar queryHandler={setQuery} query={query}></SearchBar>
           </div>
-          <div className="py-4 px-4  bg-gray-200">
-            <Filters></Filters>
-          </div>
+
           <div className="py-4 px-4 bg-gray-50">
             <Result query={query}></Result>
           </div>

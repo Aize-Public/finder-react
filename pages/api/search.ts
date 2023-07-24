@@ -1,21 +1,33 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import dummyData from "../../dummy_data.json";
 
+function isDateValid(dateString: string) {
+  const parsedDate = new Date(dateString);
+  return !isNaN(parsedDate.getTime());
+}
+
 export interface SearchRequest {
   query: string;
   aggregate: string;
+  stats: string;
   size?: number;
   offset?: number;
 }
 
-export interface Aggregations {
-  [key: string]: Record<string, number>;
+export interface AggregationsOrStats {
+  [key: string]: Record<string, number> | MinMaxValues;
+}
+
+export interface MinMaxValues {
+  min: number;
+  max: number;
 }
 
 export interface SearchResponse {
   hits: number;
   results: object[];
-  aggregations: Aggregations;
+  aggregations: AggregationsOrStats;
+  stats: AggregationsOrStats;
 }
 
 export default function handler(
@@ -32,6 +44,7 @@ export default function handler(
   const {
     query,
     aggregate,
+    stats,
     size = defaultSize,
     offset = 0,
   }: SearchRequest = req.body;
@@ -54,12 +67,18 @@ export default function handler(
 
   let filteredResults = results;
 
-  const aggregations: Aggregations = {};
+  const aggregations: AggregationsOrStats = {};
+  const stat: AggregationsOrStats = {};
+  const statsData: { [key: string]: number[] } = {};
 
-  if (aggregate) {
+  if (aggregate || stats) {
     const aggregateFields = aggregate.split(",");
+    const statsFields = stats.split(",");
     aggregateFields.forEach((field) => {
       aggregations[field] = {};
+    });
+    statsFields.forEach((field) => {
+      statsData[field] = [];
     });
 
     filteredResults.forEach((item) => {
@@ -69,6 +88,23 @@ export default function handler(
           aggregations[field][value] = (aggregations[field][value] || 0) + 1;
         }
       });
+
+      statsFields.forEach((field) => {
+        const value = item[field];
+        if (isDateValid(value)) {
+          statsData[field].push(new Date(item[field]).getTime());
+        } else if (value) {
+          statsData[field].push(item[field]);
+        }
+      });
+    });
+
+    Object.keys(statsData).forEach((data) => {
+      const minMax: MinMaxValues = {
+        min: Math.min(...statsData[data]),
+        max: Math.max(...statsData[data]),
+      };
+      stat[data] = minMax;
     });
   }
 
@@ -84,6 +120,7 @@ export default function handler(
     hits,
     results: filteredResults,
     aggregations,
+    stats: stat,
   };
 
   res.status(200).json(response);

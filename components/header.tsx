@@ -21,7 +21,7 @@ const SearchBar: React.FC<SearchProps> = ({ queryHandler, query }) => {
           <input
             type="text"
             className="w-full h-10 px-4 mr-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-indigo-500"
-            placeholder={query?.query}
+            placeholder="Enter your search query..."
             onChange={queryStringHandler}
           />
           <button className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
