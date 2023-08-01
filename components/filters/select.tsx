@@ -3,14 +3,14 @@ import { Listbox } from "@headlessui/react";
 import { ArrowDownIcon } from "@heroicons/react/20/solid";
 
 export interface Option {
-  id: number;
+  id: string;
   name: string;
   value: string;
 }
 
 interface SelectProps {
   label: string;
-  defaultValue?: Option[];
+  defaultValue: Option[];
   options: Option[];
   onChange: (selectedOption: Option[], label: string) => void;
 }
@@ -21,7 +21,7 @@ export function Select({
   defaultValue,
   onChange,
 }: SelectProps) {
-  const [selected, setSelected] = useState<Option[]>([]);
+  const [selected, setSelected] = useState<Option[]>(defaultValue);
   const isSelectAllSelected = selected.length === options.length;
 
   const toggleSelectAll = () => {

@@ -11,6 +11,7 @@ const emptySearchRequest: SearchRequest = {
   query: " ",
   aggregate: "System,Discipline",
   stats: "",
+  filters: [],
 };
 
 const queryClient = new QueryClient({

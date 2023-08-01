@@ -9,6 +9,7 @@ import { useQuery } from "react-query";
 import "./result.scss";
 import { SearchRequest, SearchResponse } from "@/pages/api/search";
 import Filters from "../filters/filters";
+import { FormFields } from "@/hooks/filters-hooks";
 
 interface Result {
   [key: string]: any;
@@ -33,6 +34,7 @@ const useSearchResults = (query: SearchRequest) => {
           query: query.query,
           aggregate: query.aggregate,
           stats: query.stats,
+          filters: query.filters,
         }),
       }).then((response) => response.json()),
     {
@@ -53,8 +55,17 @@ const Result: React.FC<ResultProps> = ({ query }: ResultProps) => {
   }, [query]);
   const memoizedContextValue = useMemo(() => data, [data]);
 
-  const aggChangeHandler = (aggregations: string, stats: string) => {
-    setUpdatedQuery({ ...query, aggregate: aggregations, stats: stats });
+  const aggChangeHandler = (
+    aggregations: string,
+    stats: string,
+    filters: FormFields[]
+  ) => {
+    setUpdatedQuery({
+      ...query,
+      aggregate: aggregations,
+      stats: stats,
+      filters: filters,
+    });
   };
 
   if (isLoading) {
@@ -75,6 +86,7 @@ const Result: React.FC<ResultProps> = ({ query }: ResultProps) => {
         <Filters
           onChangeHandler={aggChangeHandler}
           value={memoizedContextValue}
+          currentFormData={updatedQuery.filters}
         />
       </div>
       <div>

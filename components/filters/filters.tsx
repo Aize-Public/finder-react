@@ -12,12 +12,18 @@ import { SearchResponse } from "@/pages/api/search";
 interface FiltersProps {
   onChangeHandler: (arg0: string, agr1: string) => void;
   value: SearchResponse;
+  initialFormState: FormFields;
 }
 
-const Filters: React.FC<FiltersProps> = ({ onChangeHandler, value }) => {
+const Filters: React.FC<FiltersProps> = ({
+  onChangeHandler,
+  value,
+  initialFormState,
+}) => {
   const { aggregations, stats } = value;
   const [availableFormData, setAvailableFormData] = useState<FormFields>([]);
-  const { formData, setFormData, updateFormField } = useFiltersHook([]);
+  const { formData, setFormData, updateFormField } =
+    useFiltersHook(initialFormState);
   const [aggregationsSelection, setAggregationsSelection] =
     useState<string>("");
   const searchData = useSearchResultsContext();
@@ -28,7 +34,7 @@ const Filters: React.FC<FiltersProps> = ({ onChangeHandler, value }) => {
   );
 
   useEffect(() => {
-    if (formData.length > 0) {
+    if (formData?.length > 0) {
       const filteredData = Object.entries(data).filter(
         (item1) => !formData.some((item2) => item1[0] === item2["label"])
       );
@@ -50,7 +56,7 @@ const Filters: React.FC<FiltersProps> = ({ onChangeHandler, value }) => {
           .filter((data) => data.type === "date" || data.type === "number")
           .map((data) => data.label)
           .join(",");
-        onChangeHandler(aggregationData, statsData);
+        onChangeHandler(aggregationData, statsData, formData);
         return aggregationData;
       });
     }
@@ -67,7 +73,7 @@ const Filters: React.FC<FiltersProps> = ({ onChangeHandler, value }) => {
         value1: "",
         value2: "",
       }));
-      if (formData.length < 1) {
+      if (!formData || formData?.length < 1) {
         setFormData(initialFilters);
       }
     }
@@ -88,7 +94,7 @@ const Filters: React.FC<FiltersProps> = ({ onChangeHandler, value }) => {
   return (
     <>
       <div className="flex flex-wrap">
-        {formData.map(({ label, type }) => {
+        {formData?.map(({ label, type, value1, value2 }) => {
           const metadata = data[label];
           if (type === "number") {
             return (
@@ -119,13 +125,21 @@ const Filters: React.FC<FiltersProps> = ({ onChangeHandler, value }) => {
                     aggregations[label]
                       ? Object.entries(aggregations[label]).map(
                           ([key, val], index) => ({
-                            id: index,
+                            id: key,
                             name: `${key} (${val})`,
                             value: `${key} (${val})`,
                           })
                         )
                       : []
                   }
+                  defaultValue={value1
+                    .toString()
+                    .split(",")
+                    .map((data) => ({
+                      id: data,
+                      name: `${data}`,
+                      value: `${data}`,
+                    }))}
                   onChange={(options) =>
                     updateFormField(label, {
                       value1: options.map((opt) => opt.value).join(","),
