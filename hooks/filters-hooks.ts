@@ -1,10 +1,16 @@
 import { useState } from "react";
+import { Option } from "../components/filters/select";
 
-interface FormField {
+export interface FormField {
   label: string;
   type: string;
-  value1: string | number;
-  value2: string | number;
+  options?: Option[];
+  rangeMin?: number;
+  rangeMax?: number;
+  selection?: Option[];
+  min?: number;
+  max?: number;
+  value?: number;
 }
 
 export type FormFields = FormField[];

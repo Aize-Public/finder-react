@@ -4,8 +4,7 @@ interface MinMaxSliderProps {
   minValue: number;
   maxValue: number;
   step?: number;
-  onChange: (inputVal: number, key: string) => void;
-  key: string;
+  onChange: (inputVal: number) => void;
 }
 
 const MinMaxSlider: React.FC<MinMaxSliderProps> = ({
@@ -13,7 +12,6 @@ const MinMaxSlider: React.FC<MinMaxSliderProps> = ({
   maxValue,
   step = 1,
   onChange,
-  key,
 }) => {
   const [value, setValue] = useState<number>(minValue);
 
@@ -23,9 +21,7 @@ const MinMaxSlider: React.FC<MinMaxSliderProps> = ({
   };
 
   const handleBlur = () => {
-    const newValue = Math.max(minValue, Math.min(value, maxValue));
-    setValue(newValue);
-    onChange(newValue, key);
+    onChange(value);
   };
 
   return (

@@ -13,7 +13,7 @@ export interface SearchRequest {
   stats: string;
   size?: number;
   offset?: number;
-  filters: FormFields[];
+  filters: FormFields;
 }
 
 export interface AggregationsOrStats {

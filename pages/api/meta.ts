@@ -5,7 +5,7 @@ interface Data {
   [key: string]: any;
 }
 
-interface Metadata {
+export interface Metadata {
   dataType: string;
   values: any[];
   min?: string | number;
