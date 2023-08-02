@@ -34,7 +34,7 @@ export interface SearchResponse {
 
 export default function handler(
   req: NextApiRequest,
-  res: NextApiResponse<SearchResponse>
+  res: NextApiResponse<SearchResponse | { message: string }>
 ) {
   const defaultSize = 15;
   const searchData = dummyData as ISearchData[];
@@ -83,19 +83,23 @@ export default function handler(
       statsData[field] = [];
     });
 
-    filteredResults.forEach((item) => {
+    filteredResults.forEach((item: ISearchData) => {
       aggregateFields.forEach((field) => {
         const value = item[field];
         if (value) {
+          // @ts-ignore
           aggregations[field][value] = (aggregations[field][value] || 0) + 1;
         }
       });
 
       statsFields.forEach((field) => {
         const value = item[field];
+        // @ts-ignore
         if (isDateValid(value)) {
+          // @ts-ignore
           statsData[field].push(new Date(item[field]).getTime());
         } else if (value) {
+          // @ts-ignore
           statsData[field].push(item[field]);
         }
       });
@@ -128,12 +132,13 @@ export default function handler(
   res.status(200).json(response);
 }
 
-function applyFilters(results, filters) {
+function applyFilters(results: ISearchData[], filters: FormFields) {
   if (!filters || filters.length === 0) {
     return results;
   }
   const applicableFilters = filters.filter(
     (filter) =>
+      //@ts-ignore
       filter?.selection?.length > 0 ||
       filter.value ||
       (filter.min && filter.max)
@@ -147,18 +152,23 @@ function applyFilters(results, filters) {
       switch (filter.type) {
         case "string": {
           const values = filter.selection?.map((data) => data.value) || [];
+          //@ts-ignore
           return values.length === 0 || values.includes(data[filter.label]);
         }
         case "number": {
           const valueInData = data[filter.label];
           return (
             !filter.value ||
+            //@ts-ignore
             (valueInData > filter.rangeMin && valueInData <= filter.value)
           );
         }
         case "date": {
+          //@ts-ignore
           const valueInData = new Date(data[filter.label]).getTime();
+          //@ts-ignore
           const minDate = new Date(filter.min).getTime();
+          //@ts-ignore
           const maxDate = new Date(filter.max).getTime();
           return (
             !filter.min ||

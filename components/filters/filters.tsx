@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useQuery } from "react-query";
 import MinMaxSlider from "./minMaxInput";
 import { Select } from "./select";
-import DateRangePicker from "./date";
+import DateRangePicker, { Range } from "./date";
 import useFiltersHook, { FormField, FormFields } from "@/hooks/filters-hooks";
 import { Popover } from "@headlessui/react";
 import { useSearchResultsContext } from "../results/result";
@@ -30,7 +30,7 @@ const Filters: React.FC<FiltersProps> = ({
   const [aggregationsSelection, setAggregationsSelection] =
     useState<string>("");
 
-  const addFilter = (filter, data) => {
+  const addFilter = (filter: FormField) => {
     setFormData([...formData, filter]);
   };
 
@@ -39,7 +39,7 @@ const Filters: React.FC<FiltersProps> = ({
       <div className="flex flex-wrap">
         {formData?.map(
           ({ label, type, options, rangeMin, rangeMax, selection, value }) => {
-            if (type === "number") {
+            if (type === "number" && rangeMin && rangeMax) {
               return (
                 <div className="w-2/6 p-2" key={label}>
                   {
@@ -79,7 +79,7 @@ const Filters: React.FC<FiltersProps> = ({
                       label={label}
                       min={rangeMin}
                       max={rangeMax}
-                      onChange={(startDate, endDate) =>
+                      onChange={({ startDate, endDate }: Range) =>
                         updateFormField(label, {
                           min: startDate?.getTime(),
                           max: endDate?.getTime(),

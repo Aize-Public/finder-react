@@ -31,7 +31,7 @@ interface ResultsContext {
 
 const emptyData = null;
 
-export const SearchResultsContext = createContext<ResultsContext>(null);
+export const SearchResultsContext = createContext<ResultsContext | null>(null);
 
 const useSearchResults = (query: SearchRequest) => {
   return useQuery<SearchResponse>(
@@ -73,16 +73,19 @@ const Result: React.FC<ResultProps> = () => {
 
   const { formData, setFormData, updateFormField } = useFiltersHook(null);
 
-  const [results, setResults] = useState<SearchResponse>(data);
+  const [results, setResults] = useState<SearchResponse | null>(data);
 
-  const [availableFormData, setAvailableFormData] = useState<FormFields>([]);
+  const [availableFormData, setAvailableFormData] = useState<FormFields | []>(
+    []
+  );
 
   useEffect(() => {
     setResults(data);
   }, [data]);
 
   useEffect(() => {
-    setFormData((prevFormData) => {
+    // @ts-ignore
+    setFormData((prevFormData: FormFields) => {
       const formData: FormFields = [];
       let updateSelection = false;
       if (!isLoading && !isLoadingMetaData && metaData && data) {
@@ -90,7 +93,7 @@ const Result: React.FC<ResultProps> = () => {
         const statsLabel = Object.keys(data.stats);
         const combinedLabels =
           prevFormData?.length > 0
-            ? prevFormData.map((data) => data.label)
+            ? prevFormData.map((data: FormField) => data.label)
             : [...aggregationLabels, ...statsLabel];
         const existingLabels = prevFormData?.map(
           (data: FormField) => data.label
@@ -98,12 +101,14 @@ const Result: React.FC<ResultProps> = () => {
         const labelToFormFieldLookup = keyBy(prevFormData, "label");
         if (
           prevFormData &&
-          combinedLabels.every((arr2Item) => existingLabels.includes(arr2Item))
+          combinedLabels.every((arr2Item: string) =>
+            existingLabels.includes(arr2Item)
+          )
         ) {
           updateSelection = true;
         }
 
-        combinedLabels.forEach((label) => {
+        combinedLabels.forEach((label: string) => {
           const meta = metaData[label];
           const dataType = meta.dataType;
 
@@ -138,13 +143,13 @@ const Result: React.FC<ResultProps> = () => {
                 rangeMax: data.stats[label]?.max,
                 min: updateSelection
                   ? labelToFormFieldLookup[label]?.min
-                  : null,
+                  : undefined,
                 max: updateSelection
                   ? labelToFormFieldLookup[label]?.max
-                  : null,
+                  : undefined,
                 value: updateSelection
                   ? labelToFormFieldLookup[label]?.value
-                  : null,
+                  : undefined,
               });
               break;
             }
@@ -157,7 +162,7 @@ const Result: React.FC<ResultProps> = () => {
   }, [data, isLoading, isLoadingMetaData, metaData, setFormData]);
 
   useEffect(() => {
-    if (formData?.length > 0 && metaData) {
+    if (formData && formData?.length > 0 && metaData) {
       const filteredData = Object.entries(metaData).filter(
         (item1) => !formData.some((item2) => item1[0] === item2["label"])
       );
@@ -187,12 +192,13 @@ const Result: React.FC<ResultProps> = () => {
           }
         }
       });
+      // @ts-ignore
       setAvailableFormData(diff);
     }
   }, [formData, metaData, results]);
 
   useEffect(() => {
-    if (formData?.length > 1) {
+    if (formData && formData?.length > 1) {
       const aggregate = formData
         ?.filter((data) => data.type === "string")
         .map((data) => data.label)
@@ -201,6 +207,7 @@ const Result: React.FC<ResultProps> = () => {
         ?.filter((data) => data.type === "number" || data.type === "date")
         .map((data) => data.label)
         .join(",");
+      // @ts-ignore
       setRequest((prevRequest) => ({
         ...prevRequest,
         aggregate,
@@ -215,10 +222,11 @@ const Result: React.FC<ResultProps> = () => {
   }
 
   if (isError) {
+    // @ts-ignore
     return <div>Error: {error?.message}</div>;
   }
 
-  if (!data?.results.length) {
+  if (!data?.results.length || !results) {
     return <div>No results</div>;
   }
 
@@ -252,7 +260,7 @@ const Result: React.FC<ResultProps> = () => {
           <div key={index} className="flex results bg-gray-100">
             {Object.entries(result)
               .slice(0, 8)
-              .map(([key, value]) => (
+              .map(([key, value]: [key: string, value: any]) => (
                 <div
                   key={key}
                   className="result px-2 py-2 overflow-hidden whitespace-nowrap overflow-ellipsis border-r">

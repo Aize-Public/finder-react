@@ -41,7 +41,7 @@ export function Select({
   };
 
   const selectAllOption: Option = {
-    id: -1,
+    id: "-1",
     name: "Select All",
     value: "select-all",
   };
