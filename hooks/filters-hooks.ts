@@ -39,6 +39,7 @@ const useFiltersHook = (initialData: FormFields | null): FormHook => {
           }
           return formField;
         });
+        return updatedFormData;
       }
       return prevData;
     });
