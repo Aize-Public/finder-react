@@ -53,7 +53,7 @@ export default function handler(
   }: SearchRequest = req.body;
 
   if (!query) {
-    results = searchData.slice(offset, defaultSize);
+    results = searchData.slice(offset, -1);
   } else {
     results = searchData.filter((item) =>
       Object.values(item).some((value) => {
@@ -67,8 +67,7 @@ export default function handler(
   if (offset && query) {
     results = results.slice(offset);
   }
-
-  let filteredResults = results;
+  let filteredResults = applyFilters(results, filters);
 
   const aggregations: AggregationsOrStats = {};
   const stat: AggregationsOrStats = {};
@@ -127,4 +126,50 @@ export default function handler(
   };
 
   res.status(200).json(response);
+}
+
+function applyFilters(results, filters) {
+  if (!filters || filters.length === 0) {
+    return results;
+  }
+  const applicableFilters = filters.filter(
+    (filter) =>
+      filter?.selection?.length > 0 ||
+      filter.value ||
+      (filter.min && filter.max)
+  );
+  if (!applicableFilters || applicableFilters.length === 0) {
+    return results;
+  }
+
+  return results.filter((data) => {
+    return applicableFilters.every((filter) => {
+      switch (filter.type) {
+        case "string": {
+          const values = filter.selection?.map((data) => data.value) || [];
+          return values.length === 0 || values.includes(data[filter.label]);
+        }
+        case "number": {
+          const valueInData = data[filter.label];
+          return (
+            !filter.value ||
+            (valueInData > filter.rangeMin && valueInData <= filter.value)
+          );
+        }
+        case "date": {
+          const valueInData = new Date(data[filter.label]).getTime();
+          const minDate = new Date(filter.min).getTime();
+          const maxDate = new Date(filter.max).getTime();
+          return (
+            !filter.min ||
+            !filter.max ||
+            (valueInData > minDate && valueInData <= maxDate)
+          );
+        }
+        default: {
+          return true;
+        }
+      }
+    });
+  });
 }

@@ -25,14 +25,18 @@ const getRandomDateBetween = (
 };
 
 const generateDummyData = (count) => {
+  const currentMonth = new Date().getMonth() + 1;
   const startDate = `${faker.datatype.number({
     min: 10,
     max: 20,
-  })} ${faker.datatype.number({ min: 7, max: 7 })} 2023`; // dd mm yyyy
+  })} ${faker.datatype.number({ min: currentMonth, max: currentMonth })} 2023`; // dd mm yyyy
   const endDate = `${faker.datatype.number({
     min: 21,
     max: 29,
-  })} ${faker.datatype.number({ min: 7, max: 8 })} 2023`;
+  })} ${faker.datatype.number({
+    min: currentMonth,
+    max: currentMonth + 1,
+  })} 2023`;
 
   const [startDay, startMonth, startYear] = startDate.split(" ").map(Number);
   const [endDay, endMonth, endYear] = endDate.split(" ").map(Number);

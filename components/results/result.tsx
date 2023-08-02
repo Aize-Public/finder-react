@@ -14,6 +14,7 @@ import { fetchMetaData } from "@/utilities/filters-fetch.utility";
 import { Metadata } from "@/pages/api/meta";
 import { generateHash } from "@/utilities/hash-generator.utility";
 import { useRequestContext } from "@/pages";
+import { get, intersection, keyBy, map } from "lodash";
 
 interface Result {
   [key: string]: any;
@@ -83,40 +84,69 @@ const Result: React.FC<ResultProps> = () => {
   useEffect(() => {
     setFormData((prevFormData) => {
       const formData: FormFields = [];
+      let updateSelection = false;
       if (!isLoading && !isLoadingMetaData && metaData && data) {
-        const aggregationLabels = Object.entries(data?.aggregations).map(
-          ([label, _]) => label
+        const aggregationLabels = Object.keys(data.aggregations);
+        const statsLabel = Object.keys(data.stats);
+        const combinedLabels =
+          prevFormData?.length > 0
+            ? prevFormData.map((data) => data.label)
+            : [...aggregationLabels, ...statsLabel];
+        const existingLabels = prevFormData?.map(
+          (data: FormField) => data.label
         );
-        const statsLabel = Object.entries(data?.stats).map(
-          ([label, _]) => label
-        );
-        Object.entries(metaData).forEach(([label, meta]) => {
-          // if aggregation label is included in meta
-          if (aggregationLabels.includes(label) || statsLabel.includes(label)) {
-            switch (meta.dataType) {
-              case "string": {
-                formData.push({
-                  label: label,
-                  type: meta.dataType,
-                  options: Object.entries(data?.aggregations[label]).map(
-                    ([label, count]) => ({
-                      id: generateHash(label),
-                      name: `${label} (${count})`,
-                      value: label,
-                    })
-                  ),
-                } as unknown as FormField);
-                break;
+        const labelToFormFieldLookup = keyBy(prevFormData, "label");
+        if (
+          prevFormData &&
+          combinedLabels.every((arr2Item) => existingLabels.includes(arr2Item))
+        ) {
+          updateSelection = true;
+        }
+
+        combinedLabels.forEach((label) => {
+          const meta = metaData[label];
+          const dataType = meta.dataType;
+
+          switch (dataType) {
+            case "string": {
+              const options = [];
+              for (const [key, count] of Object.entries(
+                data.aggregations[label]
+              )) {
+                options.push({
+                  id: generateHash(key),
+                  name: `${key} (${count})`,
+                  value: key,
+                });
               }
-              case "date":
-              case "number": {
-                formData.push({
-                  label: label,
-                  type: meta.dataType,
-                  rangeMin: data?.stats[label].min,
-                  rangeMax: data?.stats[label].max,
-                } as unknown as FormField);
-              }
+              formData.push({
+                label: label,
+                type: dataType,
+                options: options,
+                selection: updateSelection
+                  ? labelToFormFieldLookup[label].selection
+                  : [],
+              });
+              break;
+            }
+            case "date":
+            case "number": {
+              formData.push({
+                label: label,
+                type: dataType,
+                rangeMin: data.stats[label]?.min,
+                rangeMax: data.stats[label]?.max,
+                min: updateSelection
+                  ? labelToFormFieldLookup[label]?.min
+                  : null,
+                max: updateSelection
+                  ? labelToFormFieldLookup[label]?.max
+                  : null,
+                value: updateSelection
+                  ? labelToFormFieldLookup[label]?.value
+                  : null,
+              });
+              break;
             }
           }
         });
@@ -171,9 +201,14 @@ const Result: React.FC<ResultProps> = () => {
         ?.filter((data) => data.type === "number" || data.type === "date")
         .map((data) => data.label)
         .join(",");
-      setRequest((prevRequest) => ({ ...prevRequest, aggregate, stats }));
+      setRequest((prevRequest) => ({
+        ...prevRequest,
+        aggregate,
+        stats,
+        filters: formData,
+      }));
     }
-  }, [formData]);
+  }, [formData, setRequest]);
 
   if (isLoading) {
     return <div>Loading...</div>;

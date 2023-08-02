@@ -27,12 +27,10 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
     key: "selection",
   });
 
-  const minDate = min ? new Date(min) : null;
-  const maxDate = max ? new Date(max) : null;
-
-  // useEffect(() => {
-  //   onChange(dateRange.startDate, dateRange.endDate);
-  // }, [dateRange, onChange]);
+  const minDate = min ? new Date(min) : new Date();
+  const maxDate = max
+    ? new Date(max)
+    : new Date().setDate(new Date().getDate() + 1);
 
   const handleDateRangeChange = (ranges: any) => {
     const { startDate, endDate } = ranges.selection;
@@ -47,12 +45,19 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
       endDate: newEndDate,
       key: "selection",
     });
-    if (newStartDate && newEndDate && newEndDate > newStartDate) {
-      console.log("hide pop over");
-      setShowDateRange(!showDateRange);
+  };
+
+  useEffect(() => {
+    if (
+      dateRange.startDate &&
+      dateRange.endDate &&
+      dateRange.endDate > dateRange.startDate
+    ) {
+      console.log("hide popover");
+      setShowDateRange(false);
       onChange(dateRange.startDate, dateRange.endDate, label);
     }
-  };
+  }, [dateRange]);
   const handleDateRange = () => {
     setShowDateRange(!showDateRange);
   };

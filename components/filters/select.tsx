@@ -22,7 +22,7 @@ export function Select({
   onChange,
 }: SelectProps) {
   const [selected, setSelected] = useState<Option[]>(defaultValue);
-  const isSelectAllSelected = selected.length === options.length;
+  const isSelectAllSelected = selected?.length === options.length;
 
   const toggleSelectAll = () => {
     const selection = isSelectAllSelected ? [] : options;
@@ -32,7 +32,7 @@ export function Select({
 
   const toggleOption = (option: Option) => {
     setSelected((prevSelected) => {
-      const selection = prevSelected.some((item) => item.id === option.id)
+      const selection = prevSelected?.some((item) => item.id === option.id)
         ? prevSelected.filter((item) => item.id !== option.id)
         : [...prevSelected, option];
       onChange(selection, label);
@@ -51,7 +51,7 @@ export function Select({
       <Listbox value={selected}>
         <Listbox.Button className="border w-full text-left bg-white border-gray-300 rounded-md px-2 py-2  focus:ring-blue-500 focus:border-blue-500">
           <div className="flex items-center justify-between  w-full">
-            {selected.length > 0 ? (
+            {selected?.length > 0 ? (
               <div className="overflow-hidden truncate">
                 <span>{label} is </span>
                 <span className="font-bold">
@@ -101,7 +101,7 @@ export function Select({
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={selected.some((sel) => sel.id === option.id)}
+                        checked={selected?.some((sel) => sel.id === option.id)}
                         onChange={() => toggleOption(option)}
                         className="form-checkbox h-5 w-5 text-blue-500"
                       />
