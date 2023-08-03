@@ -259,7 +259,7 @@ const Result: React.FC<ResultProps> = () => {
         {data?.results.map((result: any, index: number) => (
           <div key={index} className="flex results bg-gray-100">
             {Object.entries(result)
-              .slice(0, 8)
+              .slice(0, 12)
               .map(([key, value]: [key: string, value: any]) => (
                 <div
                   key={key}

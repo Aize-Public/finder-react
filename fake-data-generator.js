@@ -47,6 +47,15 @@ const generateDummyData = (count) => {
     const dummyData = {
       "SET POINT HIGH HIGH": faker.datatype.float({ min: 150, max: 170 }),
       sapParentAvevaExternalId: faker.datatype.uuid(),
+      "Issued By": faker.random.arrayElement([
+        "Vaibhav",
+        "Ole",
+        "Haakon",
+        "Samit",
+        "Dilanka",
+        "Michael",
+        "Lisa",
+      ]),
       "SAP OBJECT TYPE": faker.random.arrayElement([
         "IP-TIUT",
         "IP-KJPT",
