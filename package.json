@@ -17,6 +17,7 @@
     "@types/react": "18.2.9",
     "@types/react-date-range": "^1.4.4",
     "@types/react-dom": "18.2.4",
+    "@vercel/analytics": "^1.0.1",
     "autoprefixer": "10.4.14",
     "crypto": "^1.0.1",
     "date-fns": "^2.30.0",
