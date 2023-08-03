@@ -218,9 +218,9 @@ const Result: React.FC<ResultProps> = () => {
     }
   }, [formData, setRequest]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  // if (isLoading) {
+  //   return <div>Loading Results...</div>;
+  // }
 
   if (isError) {
     // @ts-ignore
@@ -234,15 +234,14 @@ const Result: React.FC<ResultProps> = () => {
   return (
     <SearchResultsContext.Provider value={{ results, setResults }}>
       <div className="py-4 px-4 bg-gray-200">
-        {formData && results && (
-          <Filters
-            formData={formData}
-            setFormData={setFormData}
-            updateFormField={updateFormField}
-            availableFormData={availableFormData}
-            setAvailableFormData={setAvailableFormData}
-          />
-        )}
+        <Filters
+          formData={formData}
+          isLoadingMeta={isLoadingMetaData}
+          setFormData={setFormData}
+          updateFormField={updateFormField}
+          availableFormData={availableFormData}
+          setAvailableFormData={setAvailableFormData}
+        />
       </div>
       <div>
         <h1 className="px-2 pb-4">Search Results ({data.hits})</h1>

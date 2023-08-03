@@ -167,7 +167,7 @@ const generateDummyData = (count) => {
   return dummyDataArray;
 };
 
-const dummyDataArray = generateDummyData(1000); // Change the count to the desired number of dummy data documents
+const dummyDataArray = generateDummyData(5000); // Change the count to the desired number of dummy data documents
 
 const jsonData = JSON.stringify(dummyDataArray, null, 2);
 fs.writeFileSync("dummy_data.json", jsonData);

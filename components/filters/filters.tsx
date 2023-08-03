@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useContext } from "react";
-import { useQuery } from "react-query";
+import React from "react";
 import MinMaxSlider from "./minMaxInput";
 import { Select } from "./select";
 import DateRangePicker, { Range } from "./date";
-import useFiltersHook, { FormField, FormFields } from "@/hooks/filters-hooks";
+import { FormField, FormFields } from "@/hooks/filters-hooks";
 import { Popover } from "@headlessui/react";
-import { useSearchResultsContext } from "../results/result";
-import { useRequestContext } from "@/pages";
 
 interface FiltersProps {
-  formData: FormFields;
+  formData: FormFields | null;
+  isLoadingMeta: boolean;
   updateFormField: (label: string, field: Partial<FormField>) => void;
   setFormData: (arg0: FormFields) => void;
   availableFormData: FormFields;
@@ -21,18 +19,18 @@ const Filters: React.FC<FiltersProps> = ({
   updateFormField,
   setFormData,
   availableFormData,
+  isLoadingMeta,
   setAvailableFormData,
 }) => {
-  const { results, setResults } = useSearchResultsContext();
-  const { request, setRequest } = useRequestContext();
-  const { aggregations, stats } = results;
-
-  const [aggregationsSelection, setAggregationsSelection] =
-    useState<string>("");
-
   const addFilter = (filter: FormField) => {
-    setFormData([...formData, filter]);
+    if (formData) setFormData([...formData, filter]);
   };
+
+  if (isLoadingMeta) {
+    return (
+      <div className="flex flex-wrap"> Metadata request is pending...</div>
+    );
+  }
 
   return (
     <>
