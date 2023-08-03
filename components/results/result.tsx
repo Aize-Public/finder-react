@@ -218,9 +218,9 @@ const Result: React.FC<ResultProps> = () => {
     }
   }, [formData, setRequest]);
 
-  // if (isLoading) {
-  //   return <div>Loading Results...</div>;
-  // }
+  if (isLoading) {
+    return <div>Loading Results...</div>;
+  }
 
   if (isError) {
     // @ts-ignore
