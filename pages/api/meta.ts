@@ -62,67 +62,73 @@ function parseValue(value: any): ParsedValue {
   };
 }
 
+const metaCache: { [key: string]: any } = {};
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const data = dummyData as Data[];
-    const metadata: { [key: string]: Metadata } = {};
+  const cacheRes = metaCache["metadata"];
+  if (metaCache["metadata"]) {
+    res.status(200).json(cacheRes);
+  } else {
+    try {
+      const data = dummyData as Data[];
+      const metadata: { [key: string]: Metadata } = {};
 
-    for (const row of data) {
-      for (const key in row) {
-        if (row.hasOwnProperty(key)) {
-          const value = row[key];
+      for (const row of data) {
+        for (const key in row) {
+          if (row.hasOwnProperty(key)) {
+            const value = row[key];
 
-          if (!metadata[key]) {
-            metadata[key] = {
-              dataType: "",
-              values: [],
-            };
-          }
+            if (!metadata[key]) {
+              metadata[key] = {
+                dataType: "",
+                values: [],
+              };
+            }
 
-          if (!metadata[key].values.includes(value)) {
-            metadata[key].values.push(value);
-          }
+            if (!metadata[key].values.includes(value)) {
+              metadata[key].values.push(value);
+            }
 
-          if (metadata[key].dataType === "") {
-            const { dataType } = parseValue(value);
-            metadata[key].dataType = dataType;
-          }
+            if (metadata[key].dataType === "") {
+              const { dataType } = parseValue(value);
+              metadata[key].dataType = dataType;
+            }
 
-          if (
-            metadata[key].dataType === "number" ||
-            metadata[key].dataType === "date"
-          ) {
-            const parsedValue = parseValue(value).parsedValue;
-            metadata[key].values = metadata[key].values.map((val) =>
-              val === value ? parsedValue : val
-            );
+            if (
+              metadata[key].dataType === "number" ||
+              metadata[key].dataType === "date"
+            ) {
+              const parsedValue = parseValue(value).parsedValue;
+              metadata[key].values = metadata[key].values.map((val) =>
+                val === value ? parsedValue : val
+              );
+            }
           }
         }
       }
-    }
 
-    for (const key in metadata) {
-      const metadataItem = metadata[key];
-      switch (metadataItem.dataType) {
-        case "number":
-        case "date":
-          metadataItem.min = Math.min(...metadataItem.values);
-          metadataItem.max = Math.max(...metadataItem.values);
-          break;
-        case "boolean":
-          metadataItem.trueCount = metadataItem.values.filter(Boolean).length;
-          metadataItem.falseCount =
-            metadataItem.values.length - metadataItem.trueCount;
-          break;
+      for (const key in metadata) {
+        const metadataItem = metadata[key];
+        switch (metadataItem.dataType) {
+          case "number":
+          case "date":
+            metadataItem.min = Math.min(...metadataItem.values);
+            metadataItem.max = Math.max(...metadataItem.values);
+            break;
+          case "boolean":
+            metadataItem.trueCount = metadataItem.values.filter(Boolean).length;
+            metadataItem.falseCount =
+              metadataItem.values.length - metadataItem.trueCount;
+            break;
+        }
       }
+      metaCache["metadata"] = metadata;
+      // Return the metadata as JSON response
+      res.status(200).json(metadata);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ error: "An error occurred while processing the data." });
     }
-
-    // Return the metadata as JSON response
-    res.status(200).json(metadata);
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while processing the data." });
   }
 }
