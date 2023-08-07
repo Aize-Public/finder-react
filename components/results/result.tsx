@@ -3,6 +3,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useQuery } from "react-query";
@@ -15,6 +16,8 @@ import { Metadata } from "@/pages/api/meta";
 import { generateHash } from "@/utilities/hash-generator.utility";
 import { useRequestContext } from "@/pages";
 import { get, intersection, keyBy, map } from "lodash";
+import { compareFormData } from "@/utilities/compare-formdata";
+import { ResultsGrid } from "../result-grid/result-grid";
 
 interface Result {
   [key: string]: any;
@@ -25,12 +28,11 @@ interface ResultProps {
 }
 
 interface ResultsContext {
-  results: SearchResponse;
+  results: SearchResponse | null;
   setResults: (arg0: SearchResponse) => void;
 }
 
 const emptyData = null;
-export const NUMBER_OF_COLUMNS = 12;
 
 export const SearchResultsContext = createContext<ResultsContext | null>(null);
 
@@ -65,33 +67,36 @@ const Result: React.FC<ResultProps> = () => {
     isError: isErrorMetaData,
     error: errorMetaData,
   } = useQuery<{ [key: string]: Metadata }>("searchMetaData", fetchMetaData);
+
   const {
-    data = emptyData,
+    data: resultsData = emptyData,
     isLoading,
     isError,
     error,
   } = useSearchResults(request);
 
-  const { formData, setFormData, updateFormField } = useFiltersHook(null);
+  const { formData, setFormData, updateFormField, deleteFormField } =
+    useFiltersHook(null);
+  const prevFormDataValue = useRef(formData);
 
-  const [results, setResults] = useState<SearchResponse | null>(data);
+  const [results, setResults] = useState<SearchResponse | null>(resultsData);
 
   const [availableFormData, setAvailableFormData] = useState<FormFields | []>(
     []
   );
 
   useEffect(() => {
-    setResults(data);
-  }, [data]);
+    setResults(resultsData);
+  }, [resultsData]);
 
   useEffect(() => {
     // @ts-ignore
     setFormData((prevFormData: FormFields) => {
       const formData: FormFields = [];
       let updateSelection = false;
-      if (!isLoading && !isLoadingMetaData && metaData && data) {
-        const aggregationLabels = Object.keys(data.aggregations);
-        const statsLabel = Object.keys(data.stats);
+      if (!isLoading && !isLoadingMetaData && metaData && resultsData) {
+        const aggregationLabels = Object.keys(resultsData.aggregations);
+        const statsLabel = Object.keys(resultsData.stats);
         const combinedLabels =
           prevFormData?.length > 0
             ? prevFormData.map((data: FormField) => data.label)
@@ -117,7 +122,7 @@ const Result: React.FC<ResultProps> = () => {
             case "string": {
               const options = [];
               for (const [key, count] of Object.entries(
-                data.aggregations[label]
+                resultsData.aggregations[label]
               )) {
                 options.push({
                   id: generateHash(key),
@@ -140,8 +145,8 @@ const Result: React.FC<ResultProps> = () => {
               formData.push({
                 label: label,
                 type: dataType,
-                rangeMin: data.stats[label]?.min,
-                rangeMax: data.stats[label]?.max,
+                rangeMin: resultsData.stats[label]?.min,
+                rangeMax: resultsData.stats[label]?.max,
                 min: updateSelection
                   ? labelToFormFieldLookup[label]?.min
                   : undefined,
@@ -160,8 +165,11 @@ const Result: React.FC<ResultProps> = () => {
       }
       return prevFormData;
     });
-  }, [data, isLoading, isLoadingMetaData, metaData, setFormData]);
+  }, [resultsData, isLoading, isLoadingMetaData, metaData, setFormData]);
 
+  /**
+   * This use effect takes care of fidd list for add filter functionality
+   */
   useEffect(() => {
     if (formData && formData?.length > 0 && metaData) {
       const filteredData = Object.entries(metaData).filter(
@@ -198,8 +206,24 @@ const Result: React.FC<ResultProps> = () => {
     }
   }, [formData, metaData, results]);
 
+  /**
+   * This useEffect takes care of the aggregation and stats for the request to http.
+   */
   useEffect(() => {
-    if (formData && formData?.length > 1) {
+    if (formData && formData?.length) {
+      /**
+       * Here we wrote a function to identify if the form data selection or min/max values are same,
+       * then possibly there are no changes on the form selection,
+       * only the options have changed according to new data from search results aggregations and stats.
+       * So lets not change the request and not let the http call fire.
+       */
+      if (
+        prevFormDataValue.current &&
+        compareFormData(prevFormDataValue.current, formData)
+      ) {
+        return;
+      }
+      prevFormDataValue.current = formData;
       const aggregate = formData
         ?.filter((data) => data.type === "string")
         .map((data) => data.label)
@@ -218,17 +242,9 @@ const Result: React.FC<ResultProps> = () => {
     }
   }, [formData, setRequest]);
 
-  if (isLoading) {
-    return <div>Loading Results...</div>;
-  }
-
   if (isError) {
     // @ts-ignore
     return <div>Error: {error?.message}</div>;
-  }
-
-  if (!data?.results.length || !results) {
-    return <div>No results</div>;
   }
 
   return (
@@ -237,39 +253,15 @@ const Result: React.FC<ResultProps> = () => {
         <Filters
           formData={formData}
           isLoadingMeta={isLoadingMetaData}
+          isLoading={isLoading}
           setFormData={setFormData}
           updateFormField={updateFormField}
           availableFormData={availableFormData}
           setAvailableFormData={setAvailableFormData}
+          deleteFormField={deleteFormField}
         />
       </div>
-      <div>
-        <h1 className="px-2 pb-4">Search Results ({data.hits})</h1>
-        <div className="flex headers py-2 border-b bg-gray-200">
-          {Object.entries(data?.results[0])
-            .slice(0, NUMBER_OF_COLUMNS)
-            .map(([key, value]) => (
-              <div
-                key={key}
-                className="header px-2 overflow-hidden whitespace-nowrap overflow-ellipsis border-r">
-                {key}
-              </div>
-            ))}
-        </div>
-        {data?.results.map((result: any, index: number) => (
-          <div key={index} className="flex results bg-gray-100">
-            {Object.entries(result)
-              .slice(0, NUMBER_OF_COLUMNS)
-              .map(([key, value]: [key: string, value: any]) => (
-                <div
-                  key={key}
-                  className="result px-2 py-2 overflow-hidden whitespace-nowrap overflow-ellipsis border-r">
-                  {value}
-                </div>
-              ))}
-          </div>
-        ))}
-      </div>
+      <ResultsGrid isLoading={isLoading} results={resultsData} />
     </SearchResultsContext.Provider>
   );
 };

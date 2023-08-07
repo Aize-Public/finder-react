@@ -3,15 +3,19 @@ import MinMaxSlider from "./minMaxInput";
 import { Select } from "./select";
 import DateRangePicker, { Range } from "./date";
 import { FormField, FormFields } from "@/hooks/filters-hooks";
-import { Popover } from "@headlessui/react";
+import { XCircleIcon } from "@heroicons/react/20/solid";
+import LoadingBox from "./filters-loader/filters-loader";
+import { AddFilter } from "./add-filter";
 
 interface FiltersProps {
   formData: FormFields | null;
   isLoadingMeta: boolean;
+  isLoading: boolean;
   updateFormField: (label: string, field: Partial<FormField>) => void;
   setFormData: (arg0: FormFields) => void;
   availableFormData: FormFields;
   setAvailableFormData: (arg0: FormFields) => void;
+  deleteFormField: (label: string) => void;
 }
 
 const Filters: React.FC<FiltersProps> = ({
@@ -21,14 +25,35 @@ const Filters: React.FC<FiltersProps> = ({
   availableFormData,
   isLoadingMeta,
   setAvailableFormData,
+  deleteFormField,
+  isLoading,
 }) => {
   const addFilter = (filter: FormField) => {
-    if (formData) setFormData([...formData, filter]);
+    if (formData) {
+      switch (filter.type) {
+        case "string": {
+          setFormData([...formData, { ...filter, selection: [] }]);
+          break;
+        }
+        case "number":
+        case "date": {
+          setFormData([
+            ...formData,
+            { ...filter, min: undefined, max: undefined },
+          ]);
+        }
+      }
+    }
   };
+  function deleteFilter(label: string): void {
+    deleteFormField(label);
+  }
 
   if (isLoadingMeta) {
     return (
-      <div className="flex flex-wrap"> Metadata request is pending...</div>
+      <div>
+        <LoadingBox items={3} orientation="horizontal" />
+      </div>
     );
   }
 
@@ -39,10 +64,13 @@ const Filters: React.FC<FiltersProps> = ({
           ({ label, type, options, rangeMin, rangeMax, selection, value }) => {
             if (type === "number" && rangeMin && rangeMax) {
               return (
-                <div className="w-2/6 p-2" key={label}>
-                  {
+                <div
+                  className="w-2/6 p-2 flex  bg-gray-100 mt-1  border-l-2 rounded-lg	"
+                  key={label}>
+                  <div className="w-5/6">
                     <MinMaxSlider
                       key={label}
+                      label={label}
                       minValue={rangeMin}
                       maxValue={rangeMax}
                       step={1}
@@ -51,40 +79,64 @@ const Filters: React.FC<FiltersProps> = ({
                         updateFormField(label, { value, label, type })
                       }
                     />
-                  }
+                  </div>
+                  <XCircleIcon
+                    className="cursor-pointer mt-2 w-1/6 h-8 text-blue-500 hover:text-blue-600 top-2 right-2"
+                    style={{ fill: "currentColor" }}
+                    onClick={() => deleteFilter(label)}
+                  />
                 </div>
               );
             } else if (type === "string") {
               return (
-                <div className="w-2/6 p-2 relative" key={label}>
-                  <Select
-                    label={label}
-                    options={options ? options : []}
-                    defaultValue={selection ? selection : []}
-                    onChange={(options) =>
-                      updateFormField(label, {
-                        selection: options,
-                      })
-                    }
+                <div
+                  className="w-2/6 p-2 flex bg-gray-100 mt-1 border-l-2 rounded-lg	"
+                  key={label}>
+                  <div className="w-5/6">
+                    <Select
+                      label={label}
+                      options={options ? options : []}
+                      defaultValue={selection ? selection : []}
+                      onChange={(options) =>
+                        updateFormField(label, {
+                          selection: options,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <XCircleIcon
+                    className="cursor-pointer mt-2 w-1/6 h-8 text-blue-500 hover:text-blue-600 top-2 right-2"
+                    style={{ fill: "currentColor" }}
+                    onClick={() => deleteFilter(label)}
                   />
                 </div>
               );
             } else if (type === "date") {
               return (
-                <div className="w-2/6 p-2" key={label}>
+                <div
+                  className="w-2/6 p-2 flex bg-gray-100 mt-1 border-l-2 rounded-lg	"
+                  key={label}>
                   {
-                    <DateRangePicker
-                      label={label}
-                      min={rangeMin}
-                      max={rangeMax}
-                      onChange={({ startDate, endDate }: Range) =>
-                        updateFormField(label, {
-                          min: startDate?.getTime(),
-                          max: endDate?.getTime(),
-                        })
-                      }
-                    />
+                    <div className="w-5/6">
+                      <DateRangePicker
+                        label={label}
+                        min={rangeMin}
+                        max={rangeMax}
+                        onChange={({ startDate, endDate }: Range) =>
+                          updateFormField(label, {
+                            min: startDate?.getTime(),
+                            max: endDate?.getTime(),
+                          })
+                        }
+                      />
+                    </div>
                   }
+                  <XCircleIcon
+                    className="cursor-pointer mt-2 w-1/6 h-8 text-blue-500 hover:text-blue-600 top-2 right-2"
+                    style={{ fill: "currentColor" }}
+                    onClick={() => deleteFilter(label)}
+                  />
                 </div>
               );
             }
@@ -92,27 +144,10 @@ const Filters: React.FC<FiltersProps> = ({
           }
         )}
         <div className="w-2/6 p-2 relative">
-          <Popover>
-            {({ open }) => (
-              <>
-                <Popover.Button className="p-2 w-full bg-blue-200 text-blue-800 rounded-md shadow-md hover:bg-blue-300 focus:outline-none focus:ring focus:ring-blue-300">
-                  Add Filter{" "}
-                </Popover.Button>
-
-                <Popover.Panel className="border border-gray-300 bg-white	 rounded-md absolute max-h-60 z-20  overflow-y-auto w-full">
-                  {availableFormData.map((filter) => (
-                    <span key={filter.label}>
-                      <button
-                        className="p-2 w-full text-left	  bg-white text-blue-800 hover:bg-blue-300 focus:outline-none focus:ring focus:ring-blue-300"
-                        onClick={addFilter.bind(null, filter)}>
-                        {filter.label}
-                      </button>
-                    </span>
-                  ))}
-                </Popover.Panel>
-              </>
-            )}
-          </Popover>
+          <AddFilter
+            addFilter={addFilter}
+            availableFormData={availableFormData}
+          />
         </div>
       </div>
     </>

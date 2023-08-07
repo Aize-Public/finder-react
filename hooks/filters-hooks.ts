@@ -19,6 +19,7 @@ export interface FormHook {
   formData: FormFields | null;
   setFormData: (data: FormFields) => void;
   updateFormField: (label: string, field: Partial<FormField>) => void;
+  deleteFormField: (label: string) => void; // Added the delete function
   resetFormData: () => void;
 }
 
@@ -45,6 +46,18 @@ const useFiltersHook = (initialData: FormFields | null): FormHook => {
     });
   };
 
+  const deleteFormField = (label: string) => {
+    setFormData((prevData) => {
+      if (prevData) {
+        const updatedFormData = prevData.filter(
+          (formField) => formField.label !== label
+        );
+        return updatedFormData;
+      }
+      return prevData;
+    });
+  };
+
   const resetFormData = () => {
     setFormData(initialData !== null ? initialData : []);
   };
@@ -53,6 +66,7 @@ const useFiltersHook = (initialData: FormFields | null): FormHook => {
     formData,
     setFormData,
     updateFormField,
+    deleteFormField, // Include the delete function in the returned object
     resetFormData,
   };
 };
