@@ -1,62 +1,17 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "react-query";
 import "./result.scss";
-import { SearchRequest, SearchResponse } from "@/pages/api/search";
 import Filters from "../filters/filters";
 import useFiltersHook, { FormField, FormFields } from "@/hooks/filters-hooks";
 import { fetchMetaData } from "@/utilities/filters-fetch.utility";
 import { Metadata } from "@/pages/api/meta";
 import { generateHash } from "@/utilities/hash-generator.utility";
 import { useRequestContext } from "@/pages";
-import { get, intersection, keyBy, map } from "lodash";
+import { keyBy } from "lodash";
 import { compareFormData } from "@/utilities/compare-formdata";
 import { ResultsGrid } from "../result-grid/result-grid";
-
-interface Result {
-  [key: string]: any;
-}
-
-interface ResultProps {
-  request: SearchRequest;
-}
-
-interface ResultsContext {
-  results: SearchResponse | null;
-  setResults: (arg0: SearchResponse) => void;
-}
-
-const emptyData = null;
-
-export const SearchResultsContext = createContext<ResultsContext | null>(null);
-
-const useSearchResults = (query: SearchRequest) => {
-  return useQuery<SearchResponse>(
-    ["searchResults", query],
-    () =>
-      fetch("/api/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: query.query,
-          aggregate: query.aggregate,
-          stats: query.stats,
-          filters: query.filters,
-        }),
-      }).then((response) => response.json()),
-    {
-      enabled: !!query,
-    }
-  );
-};
+import { useSearchResults } from "@/hooks/search-results";
+import { ResultProps } from "./result.model";
 
 const Result: React.FC<ResultProps> = () => {
   const { request, setRequest } = useRequestContext();
@@ -69,7 +24,7 @@ const Result: React.FC<ResultProps> = () => {
   } = useQuery<{ [key: string]: Metadata }>("searchMetaData", fetchMetaData);
 
   const {
-    data: resultsData = emptyData,
+    data: resultsData = null,
     isLoading,
     isError,
     error,
@@ -79,15 +34,9 @@ const Result: React.FC<ResultProps> = () => {
     useFiltersHook(null);
   const prevFormDataValue = useRef(formData);
 
-  const [results, setResults] = useState<SearchResponse | null>(resultsData);
-
   const [availableFormData, setAvailableFormData] = useState<FormFields | []>(
     []
   );
-
-  useEffect(() => {
-    setResults(resultsData);
-  }, [resultsData]);
 
   useEffect(() => {
     // @ts-ignore
@@ -204,7 +153,7 @@ const Result: React.FC<ResultProps> = () => {
       // @ts-ignore
       setAvailableFormData(diff);
     }
-  }, [formData, metaData, results]);
+  }, [formData, metaData, resultsData]);
 
   /**
    * This useEffect takes care of the aggregation and stats for the request to http.
@@ -248,7 +197,7 @@ const Result: React.FC<ResultProps> = () => {
   }
 
   return (
-    <SearchResultsContext.Provider value={{ results, setResults }}>
+    <>
       <div className="py-4 px-4 bg-gray-200">
         <Filters
           formData={formData}
@@ -262,18 +211,8 @@ const Result: React.FC<ResultProps> = () => {
         />
       </div>
       <ResultsGrid isLoading={isLoading} results={resultsData} />
-    </SearchResultsContext.Provider>
+    </>
   );
 };
 
-const useSearchResultsContext = (): ResultsContext => {
-  const context = useContext(SearchResultsContext);
-  if (!context) {
-    throw new Error(
-      "useSearchResultsContext must be used within a SearchResultsContextProvider"
-    );
-  }
-  return context;
-};
-
-export { Result, useSearchResultsContext };
+export { Result };

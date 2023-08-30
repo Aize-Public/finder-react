@@ -56,6 +56,12 @@ const generateDummyData = (count) => {
         "Michael",
         "Lisa",
       ]),
+      Owner: faker.random.arrayElement([
+        "Person A",
+        "Person B",
+        "Person C",
+        "Person D",
+      ]),
       "SAP OBJECT TYPE": faker.random.arrayElement([
         "IP-TIUT",
         "IP-KJPT",

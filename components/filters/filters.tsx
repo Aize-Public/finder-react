@@ -1,11 +1,11 @@
-import React from "react";
+import React, { memo } from "react";
 import MinMaxSlider from "./minMaxInput";
-import { Select } from "./select";
 import DateRangePicker, { Range } from "./date";
 import { FormField, FormFields } from "@/hooks/filters-hooks";
 import { XCircleIcon } from "@heroicons/react/20/solid";
 import LoadingBox from "./filters-loader/filters-loader";
 import { AddFilter } from "./add-filter";
+import { MultiSelect } from "../multi-select";
 
 interface FiltersProps {
   formData: FormFields | null;
@@ -65,7 +65,7 @@ const Filters: React.FC<FiltersProps> = ({
             if (type === "number" && rangeMin && rangeMax) {
               return (
                 <div
-                  className="w-2/6 p-2 flex  bg-gray-100 mt-1  border-l-2 rounded-lg	"
+                  className="w-2/6 p-2 flex  bg-gray-100 mt-1  border-l-2 rounded-lg"
                   key={label}>
                   <div className="w-5/6">
                     <MinMaxSlider
@@ -93,7 +93,7 @@ const Filters: React.FC<FiltersProps> = ({
                   className="w-2/6 p-2 flex bg-gray-100 mt-1 border-l-2 rounded-lg	"
                   key={label}>
                   <div className="w-5/6">
-                    <Select
+                    <MultiSelect
                       label={label}
                       options={options ? options : []}
                       defaultValue={selection ? selection : []}
@@ -154,4 +154,4 @@ const Filters: React.FC<FiltersProps> = ({
   );
 };
 
-export default Filters;
+export default memo(Filters);
